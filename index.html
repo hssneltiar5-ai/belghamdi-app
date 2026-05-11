@@ -1,32 +1,579 @@
-<!doctype html>
-<html lang="ar" dir="rtl">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
-    <meta name="theme-color" content="#1a5fa8" />
-    <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <title>Belghamdi Full Body</title>
-    <style>
-      * { margin: 0; padding: 0; box-sizing: border-box; }
-      body { background: #f0f4f8; font-family: Tahoma, 'Segoe UI', Arial, sans-serif; }
-      :root {
-        --color-background-primary: #ffffff;
-        --color-background-secondary: #f5f7fa;
-        --color-background-tertiary: #eef1f6;
-        --color-text-primary: #1a1a2e;
-        --color-text-secondary: #6b7280;
-        --color-border-tertiary: rgba(0,0,0,0.1);
-        --color-border-secondary: rgba(0,0,0,0.18);
-        --border-radius-md: 8px;
-        --border-radius-lg: 12px;
-        --font-sans: Tahoma, 'Segoe UI', Arial, sans-serif;
+import React, { useState, useEffect } from 'react';
+import { Play, Pause, RotateCcw, Info, Check, Youtube, RefreshCw, Save, Activity, Calendar, Brain, Sparkles, Loader2 } from 'lucide-react';
+
+// --- بيانات التمارين (مبنية على نموذج Full Body) ---
+// يمكنك تعديل روابط الفيديوهات (videoUrl) لاحقاً لتطابق الشيت الخاص بك
+const WORKOUT_DATA = [
+  {
+    id: 'day1',
+    name: 'اليوم الأول (Full Body 1)',
+    exercises: [
+      {
+        id: 'fb1_1',
+        name: 'Smith Machine Incline Press',
+        target: '3 مجموعات × 8-10 عدات',
+        sets: 3,
+        videoUrl: 'https://www.youtube.com/results?search_query=Smith+Machine+Incline+Press',
+        notes: 'ركز على التحكم في الوزن وقت النزول، الزاوية 30 درجة.',
+        alternatives: ['Dumbbell Incline Press', 'Barbell Incline Press']
+      },
+      {
+        id: 'fb1_2',
+        name: 'Chest Supported T-Bar Row',
+        target: '3 مجموعات × 10-12 عدة',
+        sets: 3,
+        videoUrl: 'https://www.youtube.com/results?search_query=Chest+Supported+T-Bar+Row',
+        notes: 'اسحب بكوعك مش بايدك، واثبت ثانية فوق.',
+        alternatives: ['Barbell Row', 'Seated Cable Row']
+      },
+      {
+        id: 'fb1_3',
+        name: 'Hack Squat',
+        target: '3 مجموعات × 8-10 عدات',
+        sets: 3,
+        videoUrl: 'https://www.youtube.com/results?search_query=Hack+Squat+Form',
+        notes: 'انزل لحد ما رجلك تكسر زاوية 90، وادفع بمشط رجلك.',
+        alternatives: ['Leg Press', 'Barbell Back Squat']
+      },
+      {
+        id: 'fb1_4',
+        name: 'Lying Leg Curls',
+        target: '3 مجموعات × 12-15 عدة',
+        sets: 3,
+        videoUrl: 'https://www.youtube.com/results?search_query=Lying+Leg+Curls',
+        notes: 'تحكم في الوزن وأنت نازل (المدى السلبي).',
+        alternatives: ['Seated Leg Curls']
+      },
+      {
+        id: 'fb1_5',
+        name: 'Dumbbell Lateral Raises',
+        target: '4 مجموعات × 15-20 عدة',
+        sets: 4,
+        videoUrl: 'https://www.youtube.com/results?search_query=Dumbbell+Lateral+Raises',
+        notes: 'ميل بجسمك شوية لقدام، وارفع كوعك مش إيدك.',
+        alternatives: ['Cable Lateral Raises']
       }
-    </style>
-    <script type="module" crossorigin src="/assets/index-DK1Pigxp.js"></script>
-  </head>
-  <body>
-    <div id="root"></div>
-  </body>
-</html>
+    ]
+  },
+  {
+    id: 'day2',
+    name: 'اليوم الثاني (Full Body 2)',
+    exercises: [
+      {
+        id: 'fb2_1',
+        name: 'Romanian Deadlift (RDL)',
+        target: '3 مجموعات × 8-10 عدات',
+        sets: 3,
+        videoUrl: 'https://www.youtube.com/results?search_query=Romanian+Deadlift',
+        notes: 'حافظ على استقامة ضهرك، الدفع من الحوض (Hinge).',
+        alternatives: ['Dumbbell RDL']
+      },
+      {
+        id: 'fb2_2',
+        name: 'Overhead Press (Dumbbell)',
+        target: '3 مجموعات × 8-10 عدات',
+        sets: 3,
+        videoUrl: 'https://www.youtube.com/results?search_query=Seated+Dumbbell+Overhead+Press',
+        notes: 'خلي الكوع لضم جوه شوية (Scapular Plane) لحماية الكتف.',
+        alternatives: ['Barbell Overhead Press', 'Machine Shoulder Press']
+      },
+      {
+        id: 'fb2_3',
+        name: 'Lat Pulldown',
+        target: '3 مجموعات × 10-12 عدة',
+        sets: 3,
+        videoUrl: 'https://www.youtube.com/results?search_query=Lat+Pulldown',
+        notes: 'اسحب للصدر العلوي، ضهرك مقوس हल्का.',
+        alternatives: ['Pull-ups', 'Assisted Pull-ups']
+      },
+      {
+        id: 'fb2_4',
+        name: 'Leg Extensions',
+        target: '3 مجموعات × 12-15 عدة',
+        sets: 3,
+        videoUrl: 'https://www.youtube.com/results?search_query=Leg+Extensions',
+        notes: 'اثبت ثانية فوق واعصر الأمامية.',
+        alternatives: ['Sissy Squat']
+      },
+      {
+        id: 'fb2_5',
+        name: 'Biceps Cable Curls',
+        target: '3 مجموعات × 12-15 عدة',
+        sets: 3,
+        videoUrl: 'https://www.youtube.com/results?search_query=Biceps+Cable+Curls',
+        notes: 'ثبت كوعك في جنبك متخليهوش يتحرك لقدام.',
+        alternatives: ['Dumbbell Curls', 'Barbell Curls']
+      }
+    ]
+  },
+  {
+    id: 'day3',
+    name: 'اليوم الثالث (Full Body 3)',
+    exercises: [
+      {
+        id: 'fb3_1',
+        name: 'Bulgarian Split Squat',
+        target: '3 مجموعات × 8-10 عدات (لكل رجل)',
+        sets: 3,
+        videoUrl: 'https://www.youtube.com/results?search_query=Bulgarian+Split+Squat',
+        notes: 'ميل بجذعك لقدام شوية لاستهداف الجلوتس، أو ارفع ضهرك لاستهداف الأمامية.',
+        alternatives: ['Lunges', 'Step-ups']
+      },
+      {
+        id: 'fb3_2',
+        name: 'Flat Dumbbell Bench Press',
+        target: '3 مجموعات × 8-10 عدات',
+        sets: 3,
+        videoUrl: 'https://www.youtube.com/results?search_query=Flat+Dumbbell+Bench+Press',
+        notes: 'انزل بالدمبلز لحد مستوى الصدر، واقفل كوعك شوية (45 درجة).',
+        alternatives: ['Barbell Bench Press', 'Machine Chest Press']
+      },
+      {
+        id: 'fb3_3',
+        name: 'Single Arm Cable Row',
+        target: '3 مجموعات × 10-12 عدة',
+        sets: 3,
+        videoUrl: 'https://www.youtube.com/results?search_query=Single+Arm+Cable+Row',
+        notes: 'خلي كتفك يتحرك لقدام مع الكابل عشان تعمل استرتش لللاتس.',
+        alternatives: ['Dumbbell Row', 'Machine Single Arm Row']
+      },
+      {
+        id: 'fb3_4',
+        name: 'Triceps Rope Pushdown',
+        target: '3 مجموعات × 12-15 عدة',
+        sets: 3,
+        videoUrl: 'https://www.youtube.com/results?search_query=Triceps+Rope+Pushdown',
+        notes: 'افتح الحبل لبرة في آخر النزلة.',
+        alternatives: ['Overhead Triceps Extension', 'Skull Crushers']
+      },
+      {
+        id: 'fb3_5',
+        name: 'Face Pulls',
+        target: '3 مجموعات × 15-20 عدة',
+        sets: 3,
+        videoUrl: 'https://www.youtube.com/results?search_query=Face+Pulls',
+        notes: 'اسحب باتجاه عينك، وركز على الكتف الخلفي.',
+        alternatives: ['Reverse Pec Deck']
+      }
+    ]
+  }
+];
+
+export default function App() {
+  // --- حالة التطبيق (State) ---
+  const [activeDayIndex, setActiveDayIndex] = useState(0);
+  const [logs, setLogs] = useState({});
+  const [completedSets, setCompletedSets] = useState({});
+  const [dayNotes, setDayNotes] = useState('');
+  
+  // Timer State
+  const [timerLeft, setTimerLeft] = useState(0);
+  const [isTimerActive, setIsTimerActive] = useState(false);
+  const [timerDuration, setTimerDuration] = useState(90); // 90 seconds default
+
+  // AI Coach State
+  const [aiFeedback, setAiFeedback] = useState('');
+  const [isLoadingAi, setIsLoadingAi] = useState(false);
+  const [aiError, setAiError] = useState('');
+
+  // --- استرجاع البيانات من LocalStorage عند تحميل التطبيق ---
+  useEffect(() => {
+    const savedLogs = localStorage.getItem('rippedApp_logs');
+    const savedCompleted = localStorage.getItem('rippedApp_completed');
+    const savedNotes = localStorage.getItem('rippedApp_notes');
+    
+    if (savedLogs) setLogs(JSON.parse(savedLogs));
+    if (savedCompleted) setCompletedSets(JSON.parse(savedCompleted));
+    if (savedNotes) setDayNotes(JSON.parse(savedNotes));
+  }, []);
+
+  // --- حفظ البيانات تلقائياً عند تغييرها ---
+  useEffect(() => {
+    localStorage.setItem('rippedApp_logs', JSON.stringify(logs));
+    localStorage.setItem('rippedApp_completed', JSON.stringify(completedSets));
+    localStorage.setItem('rippedApp_notes', JSON.stringify(dayNotes));
+  }, [logs, completedSets, dayNotes]);
+
+  // --- منطق التايمر ---
+  useEffect(() => {
+    let interval = null;
+    if (isTimerActive && timerLeft > 0) {
+      interval = setInterval(() => {
+        setTimerLeft(prev => prev - 1);
+      }, 1000);
+    } else if (timerLeft === 0 && isTimerActive) {
+      setIsTimerActive(false);
+      // يمكن إضافة صوت تنبيه هنا
+      alert("انتهى وقت الراحة! وحش 💪");
+    }
+    return () => clearInterval(interval);
+  }, [isTimerActive, timerLeft]);
+
+  const startTimer = (seconds) => {
+    setTimerDuration(seconds);
+    setTimerLeft(seconds);
+    setIsTimerActive(true);
+  };
+
+  const toggleTimer = () => setIsTimerActive(!isTimerActive);
+  
+  const formatTime = (seconds) => {
+    const m = Math.floor(seconds / 60);
+    const s = seconds % 60;
+    return `${m}:${s < 10 ? '0' : ''}${s}`;
+  };
+
+  // --- دوال الذكاء الاصطناعي (Gemini API) ---
+  useEffect(() => {
+    // تصفير تعليق المدرب عند تغيير اليوم
+    setAiFeedback('');
+    setAiError('');
+  }, [activeDayIndex]);
+
+  const analyzeWorkoutWithGemini = async () => {
+    setIsLoadingAi(true);
+    setAiError('');
+    setAiFeedback('');
+
+    const activeDay = WORKOUT_DATA[activeDayIndex];
+    
+    // بناء النص الذي سيتم إرساله للمدرب الذكي
+    let promptText = `أنا رياضي أقوم بتدريب كمال الأجسام. لقد أنهيت للتو تدريب: ${activeDay.name}.\n`;
+    promptText += `ملاحظاتي على أداء اليوم: ${dayNotes || 'لا يوجد ملاحظات'}\n\n`;
+    promptText += `إليك تفاصيل أوزاني وعداتي اليوم:\n`;
+    
+    activeDay.exercises.forEach((ex, idx) => {
+      promptText += `${idx + 1}. ${ex.name}:\n`;
+      let hasLogs = false;
+      for (let i = 0; i < ex.sets; i++) {
+        const logKey = `${ex.id}_set${i}`;
+        const log = logs[logKey];
+        const isCompleted = completedSets[logKey];
+        if (isCompleted && log && (log.weight || log.reps)) {
+          promptText += `   - مجموعة ${i + 1}: الوزن ${log.weight || '-'} كجم، التكرارات: ${log.reps || '-'}\n`;
+          hasLogs = true;
+        }
+      }
+      if (!hasLogs) promptText += `   - لم يتم تسجيل أو إكمال مجموعات.\n`;
+    });
+
+    promptText += `\nبناءً على هذا الأداء، قدم لي تحليلاً مختصراً جداً (في حدود 3 إلى 4 أسطر). شجعني، وقدم لي نصيحة سريعة للتحسن في المرة القادمة، أو علق على أوزاني إذا كانت مسجلة.`;
+
+    const apiKey = ""; 
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
+    const delays = [1000, 2000, 4000, 8000, 16000];
+
+    for (let i = 0; i < 5; i++) {
+      try {
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: promptText }] }],
+            systemInstruction: {
+              parts: [{ text: "أنت مدرب كمال أجسام محترف وخبير، تتحدث العربية بأسلوب محفز، قوي، ومختصر جداً، وتستخدم إيموجيز رياضية." }]
+            }
+          })
+        });
+
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+        const data = await response.json();
+        const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+        if (text) {
+          setAiFeedback(text);
+          setIsLoadingAi(false);
+          return;
+        } else {
+          throw new Error('لم يتم استرجاع نص صالح');
+        }
+      } catch (error) {
+        if (i === 4) {
+          setAiError('حدث خطأ في الاتصال بالمدرب الذكي. يرجى المحاولة لاحقاً.');
+          setIsLoadingAi(false);
+        } else {
+          await new Promise(res => setTimeout(res, delays[i]));
+        }
+      }
+    }
+  };
+
+  // --- دوال تحديث البيانات ---
+  const handleInputChange = (exerciseId, setIndex, field, value) => {
+    const key = `${exerciseId}_set${setIndex}`;
+    setLogs(prev => ({
+      ...prev,
+      [key]: {
+        ...prev[key],
+        [field]: value
+      }
+    }));
+  };
+
+  const toggleSetComplete = (exerciseId, setIndex) => {
+    const key = `${exerciseId}_set${setIndex}`;
+    setCompletedSets(prev => ({
+      ...prev,
+      [key]: !prev[key]
+    }));
+    
+    // تشغيل التايمر تلقائياً إذا تم إكمال المجموعة
+    if (!completedSets[key]) {
+      startTimer(timerDuration);
+    }
+  };
+
+  const resetDay = () => {
+    if (window.confirm('هل أنت متأكد من تصفير بيانات اليوم؟ سيتم مسح علامات الإكمال، لكن الأوزان ستبقى مسجلة.')) {
+      const activeDay = WORKOUT_DATA[activeDayIndex];
+      const newCompleted = { ...completedSets };
+      
+      activeDay.exercises.forEach(ex => {
+        for (let i = 0; i < ex.sets; i++) {
+          delete newCompleted[`${ex.id}_set${i}`];
+        }
+      });
+      
+      setCompletedSets(newCompleted);
+    }
+  };
+
+  const activeDay = WORKOUT_DATA[activeDayIndex];
+
+  return (
+    <div className="min-h-screen bg-zinc-950 text-gray-100 font-sans pb-24" dir="rtl">
+      
+      {/* --- HEADER --- */}
+      <header className="sticky top-0 z-50 bg-zinc-900 border-b border-lime-500/30 shadow-lg shadow-lime-900/20">
+        <div className="max-w-2xl mx-auto px-4 py-4">
+          <div className="flex justify-between items-center mb-4">
+            <h1 className="text-2xl font-black italic tracking-wider text-white uppercase flex items-center gap-2">
+              <Activity className="text-lime-400" />
+              PROJECT <span className="text-lime-400">RIPPED</span>
+            </h1>
+            <button 
+              onClick={resetDay}
+              className="text-xs flex items-center gap-1 bg-zinc-800 text-gray-300 px-3 py-1.5 rounded border border-zinc-700 hover:text-lime-400"
+            >
+              <RefreshCw size={14} /> تصفير اليوم
+            </button>
+          </div>
+
+          {/* Day Selector */}
+          <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+            {WORKOUT_DATA.map((day, idx) => (
+              <button
+                key={day.id}
+                onClick={() => setActiveDayIndex(idx)}
+                className={`whitespace-nowrap px-4 py-2 rounded-lg font-bold transition-all ${
+                  activeDayIndex === idx 
+                    ? 'bg-lime-400 text-zinc-950 shadow-[0_0_15px_rgba(163,230,53,0.3)]' 
+                    : 'bg-zinc-800 text-gray-400 border border-zinc-700 hover:bg-zinc-700'
+                }`}
+              >
+                {day.name}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Floating Timer Bar */}
+        {(timerLeft > 0 || isTimerActive) && (
+          <div className="bg-zinc-800 border-t border-b border-lime-500/20 py-2 px-4 flex justify-between items-center">
+            <div className="flex items-center gap-3">
+              <span className="text-lime-400 font-mono text-xl font-bold">{formatTime(timerLeft)}</span>
+              <span className="text-sm text-gray-400">راحة</span>
+            </div>
+            <div className="flex gap-2">
+              <button onClick={() => startTimer(timerDuration)} className="p-2 rounded bg-zinc-700 text-white"><RotateCcw size={16} /></button>
+              <button onClick={toggleTimer} className="p-2 rounded bg-lime-400 text-zinc-950">
+                {isTimerActive ? <Pause size={16} /> : <Play size={16} />}
+              </button>
+            </div>
+          </div>
+        )}
+      </header>
+
+      {/* --- MAIN CONTENT --- */}
+      <main className="max-w-2xl mx-auto px-4 py-6 space-y-6">
+        
+        {/* Timer Presets */}
+        <div className="flex gap-2 justify-center mb-6">
+          {[60, 90, 120, 180].map(secs => (
+            <button
+              key={secs}
+              onClick={() => startTimer(secs)}
+              className="text-xs px-3 py-1.5 rounded-full bg-zinc-800 text-gray-400 border border-zinc-700 hover:text-lime-400 hover:border-lime-400 transition"
+            >
+              +{secs/60} دقيقة
+            </button>
+          ))}
+        </div>
+
+        {/* Exercises List */}
+        {activeDay.exercises.map((exercise, index) => (
+          <div key={exercise.id} className="bg-zinc-900 rounded-xl border border-zinc-800 overflow-hidden shadow-lg">
+            
+            {/* Exercise Header */}
+            <div className="p-4 bg-gradient-to-r from-zinc-900 to-zinc-800 border-b border-zinc-800">
+              <div className="flex justify-between items-start mb-2">
+                <h2 className="text-lg font-bold text-white flex items-center gap-2">
+                  <span className="text-lime-400">{index + 1}.</span> {exercise.name}
+                </h2>
+                {/* Video Button */}
+                <a 
+                  href={exercise.videoUrl} 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="bg-red-500/10 text-red-500 p-2 rounded-lg hover:bg-red-500 hover:text-white transition flex items-center gap-1 text-xs font-bold"
+                >
+                  <Youtube size={16} /> <span className="hidden sm:inline">شرح</span>
+                </a>
+              </div>
+              <p className="text-sm text-gray-400 mb-3">{exercise.target}</p>
+              
+              {/* Note & Alternatives Toggle */}
+              <details className="group">
+                <summary className="text-xs text-lime-400 cursor-pointer flex items-center gap-1 font-semibold list-none">
+                  <Info size={14} /> إرشادات وبدائل <span className="group-open:rotate-180 transition">▼</span>
+                </summary>
+                <div className="mt-2 p-3 bg-zinc-950 rounded border border-zinc-800 text-sm text-gray-300">
+                  <p className="mb-2"><span className="text-lime-400 font-bold">نصيحة:</span> {exercise.notes}</p>
+                  <p><span className="text-lime-400 font-bold">بدائل:</span> {exercise.alternatives.join(' / ')}</p>
+                </div>
+              </details>
+            </div>
+
+            {/* Sets Logging Table */}
+            <div className="p-4">
+              {/* Table Headers */}
+              <div className="grid grid-cols-4 gap-2 mb-2 text-xs font-bold text-gray-500 text-center">
+                <div>المجموعة</div>
+                <div>الوزن (kg)</div>
+                <div>العدات</div>
+                <div>تم</div>
+              </div>
+
+              {/* Set Rows */}
+              {Array.from({ length: exercise.sets }).map((_, setIdx) => {
+                const logKey = `${exercise.id}_set${setIdx}`;
+                const isCompleted = completedSets[logKey];
+                const currentLog = logs[logKey] || { weight: '', reps: '' };
+
+                return (
+                  <div key={setIdx} className={`grid grid-cols-4 gap-2 items-center mb-2 p-2 rounded-lg transition-colors ${isCompleted ? 'bg-lime-900/20 border border-lime-500/30' : 'bg-zinc-950/50'}`}>
+                    
+                    {/* Set Number */}
+                    <div className="text-center font-bold text-gray-300">
+                      {setIdx + 1}
+                    </div>
+
+                    {/* Weight Input */}
+                    <div>
+                      <input 
+                        type="number"
+                        placeholder="--"
+                        value={currentLog.weight}
+                        onChange={(e) => handleInputChange(exercise.id, setIdx, 'weight', e.target.value)}
+                        className="w-full bg-zinc-800 text-white text-center rounded border border-zinc-700 py-1.5 focus:outline-none focus:border-lime-400 focus:ring-1 focus:ring-lime-400"
+                      />
+                    </div>
+
+                    {/* Reps Input */}
+                    <div>
+                      <input 
+                        type="number"
+                        placeholder="--"
+                        value={currentLog.reps}
+                        onChange={(e) => handleInputChange(exercise.id, setIdx, 'reps', e.target.value)}
+                        className="w-full bg-zinc-800 text-white text-center rounded border border-zinc-700 py-1.5 focus:outline-none focus:border-lime-400 focus:ring-1 focus:ring-lime-400"
+                      />
+                    </div>
+
+                    {/* Check/Complete Button */}
+                    <div className="flex justify-center">
+                      <button 
+                        onClick={() => toggleSetComplete(exercise.id, setIdx)}
+                        className={`w-8 h-8 rounded-full flex items-center justify-center transition-all ${
+                          isCompleted 
+                            ? 'bg-lime-400 text-zinc-900 shadow-[0_0_10px_rgba(163,230,53,0.4)]' 
+                            : 'bg-zinc-700 text-zinc-500 hover:bg-zinc-600'
+                        }`}
+                      >
+                        <Check size={18} strokeWidth={isCompleted ? 3 : 2} />
+                      </button>
+                    </div>
+
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        ))}
+
+        {/* Day Notes Section */}
+        <div className="bg-zinc-900 rounded-xl border border-zinc-800 p-4 shadow-lg mb-8">
+          <h3 className="text-lime-400 font-bold flex items-center gap-2 mb-3">
+            <Save size={18} /> ملاحظات أداء اليوم
+          </h3>
+          <textarea 
+            value={dayNotes}
+            onChange={(e) => setDayNotes(e.target.value)}
+            placeholder="مثال: نمت كويس إمبارح، زودت وزن في السكوات، حاسس بشد في الكتف..."
+            className="w-full bg-zinc-950 border border-zinc-800 rounded-lg p-3 text-sm text-white focus:outline-none focus:border-lime-400 h-24"
+          ></textarea>
+        </div>
+
+        {/* AI Coach Section */}
+        <div className="bg-zinc-900 rounded-xl border border-lime-500/30 p-4 shadow-[0_0_15px_rgba(163,230,53,0.1)] mb-8">
+          <h3 className="text-lime-400 font-bold flex items-center gap-2 mb-3">
+            <Brain size={18} /> المدرب الذكي (AI) ✨
+          </h3>
+          <p className="text-sm text-gray-400 mb-4">
+            أنهيت تمرينك؟ اطلب من المدرب الذكي تحليل أدائك، أوزانك، وملاحظاتك ليقدم لك نصيحة وتوجيه للمرة القادمة.
+          </p>
+          
+          {!aiFeedback && !isLoadingAi && (
+            <button 
+              onClick={analyzeWorkoutWithGemini}
+              className="w-full bg-lime-500 hover:bg-lime-400 text-zinc-950 font-bold py-3 px-4 rounded-lg flex items-center justify-center gap-2 transition-colors"
+            >
+              <Sparkles size={18} /> ✨ اطلب تحليل الأداء
+            </button>
+          )}
+
+          {isLoadingAi && (
+            <div className="flex flex-col items-center justify-center py-6 text-lime-400 gap-3">
+              <Loader2 className="animate-spin" size={32} />
+              <span className="text-sm font-semibold animate-pulse">المدرب يقوم بتحليل بياناتك...</span>
+            </div>
+          )}
+
+          {aiError && (
+            <div className="bg-red-500/10 border border-red-500/50 text-red-400 p-3 rounded-lg text-sm mb-3">
+              {aiError}
+            </div>
+          )}
+
+          {aiFeedback && (
+            <div className="bg-zinc-950 border border-lime-500/50 rounded-lg p-4 relative">
+              <div className="absolute -top-3 -right-3 bg-lime-500 text-zinc-950 rounded-full p-1.5 shadow-lg">
+                <Sparkles size={16} />
+              </div>
+              <p className="text-gray-200 text-sm leading-relaxed whitespace-pre-wrap">
+                {aiFeedback}
+              </p>
+              <button 
+                onClick={analyzeWorkoutWithGemini}
+                className="mt-4 text-xs text-lime-400 hover:text-lime-300 flex items-center gap-1 font-semibold"
+              >
+                <RefreshCw size={12} /> ✨ تحديث التحليل
+              </button>
+            </div>
+          )}
+        </div>
+
+      </main>
+
+    </div>
+  );
+}
